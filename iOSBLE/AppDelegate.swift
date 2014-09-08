@@ -1,46 +1,43 @@
-//
-//  AppDelegate.swift
-//  iOSBLE
-//
-//  Created by Sam Youtsey on 9/8/14.
-//  Copyright (c) 2014 Nebari. All rights reserved.
-//
-
 import UIKit
+import CoreBluetooth
 
 @UIApplicationMain
-class AppDelegate: UIResponder, UIApplicationDelegate {
+class AppDelegate: UIResponder, UIApplicationDelegate, CBCentralManagerDelegate {
                             
     var window: UIWindow?
-
+    var centralManager: CBCentralManager?
 
     func application(application: UIApplication, didFinishLaunchingWithOptions launchOptions: [NSObject: AnyObject]?) -> Bool {
-        // Override point for customization after application launch.
+        centralManager = CBCentralManager(delegate: self, queue: nil)
         return true
     }
-
-    func applicationWillResignActive(application: UIApplication) {
-        // Sent when the application is about to move from active to inactive state. This can occur for certain types of temporary interruptions (such as an incoming phone call or SMS message) or when the user quits the application and it begins the transition to the background state.
-        // Use this method to pause ongoing tasks, disable timers, and throttle down OpenGL ES frame rates. Games should use this method to pause the game.
+    
+    func centralManagerDidUpdateState(central: CBCentralManager!) {
+        if central.state == CBCentralManagerState.PoweredOn {
+            centralManager!.scanForPeripheralsWithServices(nil, options: nil)
+        }
     }
-
-    func applicationDidEnterBackground(application: UIApplication) {
-        // Use this method to release shared resources, save user data, invalidate timers, and store enough application state information to restore your application to its current state in case it is terminated later.
-        // If your application supports background execution, this method is called instead of applicationWillTerminate: when the user quits.
+    
+    func centralManager(central: CBCentralManager!, didDiscoverPeripheral peripheral: CBPeripheral!, advertisementData: [NSObject : AnyObject]!, RSSI: NSNumber!) {
+        var proximityUUID: String?
+        if let data = advertisementData[CBAdvertisementDataManufacturerDataKey] as? NSData {
+            println("Data size: \(data.length) bytes")
+            proximityUUID = parseBeaconAdvertisement(data)
+        }
+        println("Found Beacon: \(peripheral.name), proximityUUID: \(proximityUUID), uuidstring: \(peripheral.identifier.UUIDString)")
     }
-
-    func applicationWillEnterForeground(application: UIApplication) {
-        // Called as part of the transition from the background to the inactive state; here you can undo many of the changes made on entering the background.
+    
+    func parseBeaconAdvertisement(data: NSData) -> String {
+        if data.length != 25 {
+            return "null"
+        }
+        
+        var uuidBytes = [Character](count: 17, repeatedValue: "0")
+        var uuidRange = NSMakeRange(4, 16)
+        data.getBytes(&uuidBytes, range: uuidRange)
+        var bytes = UnsafeMutablePointer<UInt8>(uuidBytes)
+        var proximityUUID = NSUUID(UUIDBytes: bytes)
+        return proximityUUID.UUIDString
     }
-
-    func applicationDidBecomeActive(application: UIApplication) {
-        // Restart any tasks that were paused (or not yet started) while the application was inactive. If the application was previously in the background, optionally refresh the user interface.
-    }
-
-    func applicationWillTerminate(application: UIApplication) {
-        // Called when the application is about to terminate. Save data if appropriate. See also applicationDidEnterBackground:.
-    }
-
-
 }
 
