@@ -6,6 +6,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate, CBCentralManagerDelegate 
                             
     var window: UIWindow?
     var centralManager: CBCentralManager?
+    var scanning = false
 
     func application(application: UIApplication, didFinishLaunchingWithOptions launchOptions: [NSObject: AnyObject]?) -> Bool {
         centralManager = CBCentralManager(delegate: self, queue: nil)
@@ -13,8 +14,10 @@ class AppDelegate: UIResponder, UIApplicationDelegate, CBCentralManagerDelegate 
     }
     
     func centralManagerDidUpdateState(central: CBCentralManager!) {
-        if central.state == CBCentralManagerState.PoweredOn {
+        if central.state == CBCentralManagerState.PoweredOn && !scanning {
             centralManager!.scanForPeripheralsWithServices(nil, options: nil)
+            println("Scanning")
+            scanning = true
         }
     }
     
